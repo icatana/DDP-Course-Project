@@ -1,0 +1,70 @@
+---
+title: "Developing Data Products<br>Diamonds Price Prediction"
+author: "Ioan Catana"
+date: "July 30, 2018"
+output: ioslides_presentation
+---
+
+```{r knitr_setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+```
+
+## Introduction
+This presentation is part of the Developing Data Products Coursera.org course project submission.
+
+It is an R Presentation generated with RStudio.
+
+The Shiny application pitched by this presentation is at:
+[https://icatana.shinyapps.io/predict_diamonds/](https://icatana.shinyapps.io/predict_diamonds/)
+
+The Shiny application source code is available at: [https://github.com/icatana/DDP-Course-Project](https://github.com/icatana/DDP-Course-Project)
+
+## Goal
+
+The goal of the application is to predict a diamond price using a prediction linear model. 
+
+Also we will try to understand how different factors may influence the price of a diamond.
+
+To address that we use the `diamonds` dataset containing the prices and other attributes of almost 54,000 diamonds.
+
+To make interpretation easier we choose a random sample of maximum ten thousand entries from the original dataset.
+
+## Plotting the Data
+
+We plot the diamond weight(`carat`) vs. price in dollars (`price`) along the x/y axes. 
+We also plot the prediction model in red.
+
+```{r diamonds_plot, echo = FALSE}
+library(plotly)
+data(diamonds)
+set.seed(112233)
+small_diamonds <- diamonds[sample(nrow(diamonds), 1000), ]
+fit <- lm(price ~ carat, data = small_diamonds)
+plot_ly(small_diamonds, x = ~carat, y = ~price, color = I("blue"),
+        text = ~paste("Carat: ", carat, '<br>Price:', price, ' $'),
+        type = "scatter", mode = "markers", name = "Real Data") %>%
+  add_lines(x = ~carat, y = fitted(fit), color = I("red"), name = "Prediction Model") %>%
+  layout(title = "Diamonds Dataset")
+```
+
+## Code Sample 
+
+The following is a sample code from Shiny application 'server.R':
+```{r server_code, echo = TRUE, eval = FALSE}
+  # Calculate price prediction based on linear model and input carat
+  diamond_pred <- reactive({
+    diamond_model <- lm(price ~ carat, data = small_diamonds())
+    predict(diamond_model, newdata = data.frame(
+      carat = input$vcarat))
+  })
+  # Draw the plot Diamond price vs. carat
+  output$diamondsPlot <- renderPlot({
+    ggplot(small_diamonds(), aes(x=carat,y=price)) +
+      geom_point(color='blue',fill='blue') +
+      geom_smooth(method = "lm", color = "red", se = FALSE) +
+      geom_point(aes(x=input$vcarat, y=diamond_pred()), 
+                 color='red', fill='red', size = 4)
+    
+  })
+```
